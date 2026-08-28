@@ -1,0 +1,151 @@
+---
+title: "Uber Analytics Dataset"
+author: "Chuma Yali"
+date: "2025-10-07"
+format: pdf
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# [Project 6: Uber Analytics Dataset]{.underline}
+
+### Introduction
+
+The purpose of this project is to analyse the Uber analytics booking data that is obtained from Kaggle. The data set provides detailed information on ride bookings, booking IDs, customer IDs, ride distances, ratings, driver cancellations, payment methods and other performance indicators. This project seeks to explore and visualise patterns within the data in order to gain insight into customer behaviour, operational trends and service efficiency. The main objective then for this project is to clean and prepare this Uber data set for analysis, transform it and explore key variables in order to be able to uncover patterns as well as insights and finally, visualise the data in order to highlight operational and customer trends. By using this approach, it shows how data analytics can be able to help companies such as Uber identify demand peaks, improve their operational efficiency as well as enhance the overall user experience. This data set was derived from the app Kaggle by user/author Yash Dev Laddha. It shows the Uber Data Analytics Dashboard and the data set it has includes the data schema, the vehicle fleet coverage, the revenue distribution by payment method, cancellation patterns, rating analysis and data quality. It is sourced from <https://www.kaggle.com/datasets/yashdevladdha/uber-ride-analytics-dashboard/data>.
+
+### Data Cleaning and Preparation
+
+Before any analysis could be done, the data set is required to go through thorough cleaning and preparation. The first step involved would be to import the data set into R using the tidyverse package, then straight after load the tidyverse library, which simplifies the handling of structured data. The tidyverse package helps with reconstructing the data in use more orderly and consistent and has other packages included to help with tidying and transforming the data so that it can be worked with properly.
+
+The data was then fetched from documents using the read.csv from the package readr under tidyverse, which helps read data formats such as CSV and Excel files in R. For verification that it is the correct data, the head() and view() function was used. To clean my data, the function janitor::clean_names() was used and it cleaned the data by making it easier to work with in my analysis and made all the column names lowercase. The function also helps fix any invisible spaces and the workflow more smooth.
+
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+#install.packages("janitor")
+library(janitor)
+
+#loaded data
+uber_data <- read.csv("ncr_ride_bookings.csv")
+uber_data <- janitor::clean_names(uber_data) #cleans all columns
+
+#Double checking for data
+head(uber_data)
+view(uber_data) 
+
+```
+
+In this next stage, the data set was first examined for any missing values using the sum(is.na) function. This function counts how many entries are incomplete across all columns. The distinct() function was used to remove any duplicate rows and values in order to ensure data accuracy and prevent repeated records from ruining of affecting the analysis. Following this, a new data frame was then created where the Date and Time columns were merged together to create a combined column and converted into a proper date-time format using ymd_hms(). From this combined column, additional time related features were then extracted, this including the specific date, the hour of the day, the specific time and the month, in order to enable deeper temporal analysis.
+
+This process ensured that the data set was consistent, clean and that it was well structured for further exploration and visualisation. The head() function is used to view if the data is correct and it produces the cleaner version of the data set.
+
+```{r}
+#checking for any missing values
+sum(is.na(uber_data))
+
+#Checking for any duplicates
+uber_data <- distinct(uber_data)
+
+uber <- uber_data |>
+  mutate(datetime = ymd_hms(paste(date, time)),
+         date = as.Date(datetime),
+         day = wday(datetime, label = TRUE),
+         hour = hour(datetime),
+         month = month(datetime, label = TRUE))
+```
+
+```{r}
+head(uber_data) #to double check
+```
+
+The following step was cleaned by aggregating the data set into four summary tables in order to support categorical analysis. Four variables was created using the data set; *daily_rides, hourly_rides, cancellations* and *payments*. "daily_rides" contains the number of trips per calender date and is used to analyse and examine trends over time. "hourly_rides" tallies the trips by the hour of day in order to identify peak demand periods. "cancellations" summarises booking outcomes by counting each booking status and highlighting the relative frequency of completed versus cancelled trips. The last variable, payments, shows customers' payment preferences. These summarised variables provide a ready made input for visualisations and for deriving operational insights such as peak hours, cancellation rates and dominant payment types.
+
+```{r}
+#Finding the aggregate by day: Trip that happen per day
+daily_rides <- uber |> 
+  count(date)
+
+#Finding the aggregate by hour: Trips that happen per hour
+hourly_rides <- uber |>
+  count(hour)
+
+#cancellations
+cancellations <- uber |>
+  count(booking_status)
+
+#Payment Methods
+payments <- uber |>
+  count(payment_method)
+```
+
+### [Exploratory Data Analysis: Visualisations]{.underline}
+
+#### **Visual 1: Rides/Trips Over time**
+
+This visualization reveals fluctuations in daily demand, which suggests that certain days experience higher ride requests than other days. Such variations may correspond to weekdays, weekends, or even public events that influence customer mobility patterns. The visualization helps identify which days experience the most bookings and can guide Uber in optimizing driver availability.
+
+```{r}
+ggplot(daily_rides, aes(x = date, y = n)) +
+  geom_point(colour = "steelblue") +
+  labs(title = "Uber Rides Per Day", 
+                x = "Date",
+                y = "Trips")
+```
+
+#### Visual 2: for Peak Hours
+
+A bar chart displaying the number of rides by hour of the day was used to explore temporal ride patterns. The results showed that most trips occur during morning and evening hours, which correspond to commuting times. These findings confirm that Uber experiences peak demand during rush hours, emphasizing the importance of having sufficient drivers on the road during these periods to reduce customer wait times and maximize efficiency.
+
+```{r}
+ggplot(hourly_rides, aes(x = hour, y = n)) +
+  geom_col(fill = "purple") +
+  labs(title = "Uber Rides by Hour of Day",
+                x = "Hour",
+                y = "Trips")
+```
+
+#### Visual 3: Amount of cancellations when booked
+
+The analysis of booking status, presented through a bar chart, revealed the proportion of rides that were completed versus those that were cancelled. The visual comparison of completed and cancelled rides provides insight into potential service challenges, such as high cancellation rates by either drivers or customers. Understanding these patterns can help Uber identify problem areas and introduce solutions such as driver incentives or improved communication to reduce cancellations.
+
+```{r}
+ggplot(cancellations, aes(x = booking_status, y = n, fill = booking_status)) +
+  geom_col() +
+  labs(title = "Booking Outcomes", 
+        x = "Status",
+        y = "Count")
+```
+
+### Visual 4: Different Payment Methods Used
+
+This bar chart explores the distribution of payment methods used by customers. The results indicated the preferred modes of payment, such as cash, card, or digital wallet options. This insight is valuable for Uber’s business operations, as it highlights the growing adoption of cashless payment methods and can inform decisions regarding payment system improvements or promotional strategies for digital transactions. Here it shows that UPI (which refers to Unified Payments Interface, a digital payment tool in India), null (which refers to people who don't use any of the other payment methods but probably use alternative digital payment tools) are the high financial contributors, with cash as the third highest. Credit and debit card and Uber Wallet are the least preferred to use.
+
+```{r}
+ggplot(payments, aes(x = payment_method, y = n, fill = payment_method)) +
+  geom_col() +
+  labs(title = "Payment Methods Used", 
+       x = "Payment Method",
+       y = "Count")
+```
+
+#### Key Insights:
+
+The analysis revealed several key findings; firstly, Uber’s ride demand shows a clear temporal pattern, with demand peaking during the early morning and late afternoon hours. Secondly, cancellations remain a significant aspect of Uber’s operations, which also highlights a need for improved scheduling and communication mechanisms in order to minimize incomplete rides. Thirdly, the payment trends demonstrate a strong shift toward digital methods, indicating a growing customer trust in cashless systems.
+
+These insights all illustrate how data analytics can uncover valuable operational trends that help businesses like Uber make informed decisions. By understanding when and how customers book rides, Uber can better allocate drivers, manage demand surges and improve their service reliability.
+
+### [Reporting]{.underline}
+
+This project had an aim to show the data analysis of Uber analytics, from data cleaning, preparation and transforming raw data sets to visualizing insights that inform real world decision making. Through this steps, meaningful patterns were uncovered in Uber's ride data. The data that was analysed visualised were the rides that were taken per day, thee rides that were taken per hour in a day, cancellations that are done via after booking a ride and payment method preferences. These were analysed in order to gain insight and see what can be improved in terms of their operational efficiency and customer user satisfaction. Below are the visual results of my analysis:
+
+![](images/clipboard-3285285201.png)
+
+![](images/clipboard-1796966397.png)
+
+![](images/clipboard-577440893.png)
+
+![](images/clipboard-836178623.png)
+
+The results that are shown highlight important elements in Uber. They show predictable fluctuations in ride demand, a high activity especially during peak hour when people need rides the most and an increased preference in customers using digital payments. The booking outcome analysis demonstrates the areas in which Uber can improve their user satisfaction and operational efficiency. In conclusion, this project demonstrates the importance of data driven approaches in understanding user behavior and optimising transport services. By able able to make use of analytical tools to find patterns and trends in the data as well as to visualise them, businesses are able to gain insights of which they can leverage and work on in order to enhance both strategic and operational outcomes.

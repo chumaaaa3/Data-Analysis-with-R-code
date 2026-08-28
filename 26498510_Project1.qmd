@@ -1,0 +1,182 @@
+---
+title: "Gender Disparities in Workforce Participation - South Africa vs. Sudan"
+editor: visual
+format: pdf
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Project 5: [Gender Disparities in Workforce Participatio - South Africa vs. Sudan]{.underline}
+
+### Introduction
+
+Gender disparities in workforce participation are a global concern and will continue to be one especially in developing regions such as Africa. This project's purpose is to investigate the differences that are between male and female labour force participation in both South Africa and Sudan. These two countries represent contrasting geographic, social and economic landscapes in the African continent. South Africa, which is located in the southern region, has went under significant policy efforts in order to promote gender equality since the end of apartheid and Sudan on the other hand, which is situated in the north, has faced so much socio-political challenges that have unfortunately influenced women's economic participation. These two countries are in the same continent, are both developing and comparing them shows the contrasting differences of being developing countries in the same region but on different parts of the continent, southern and northern. This project also aims to uncover any patterns as well as trends in the gender disparities of both countries and then offering some insights into how socio-economic and regional contexts shape workforce inclusion. The data for this analysis was sourced from the World Bank Gender Indicators via the WDI package in R and it covers the years from 2000 until 2022.
+
+### Data Cleaning and Preparation
+
+The data set was retrieved using the WDI package in R, which allows direct access to World Bank Gender Indicators. The tidyverse package was also installed in order to help the data be more efficient and consistent. Another package installed to assist with the data set is the ggthemes package which is like an extension of ggplot2 and it offers additional themes for ggplot2 charts.
+
+Another way to retrieve and import the data is:
+
+-   by using the read.csv() function to help import the data set into RStudio.
+
+-   After the importing it, one would then need to clean it using janitor::clean_names(). This function helps fix the data and looks for any invisible spaces and inconsistencies so it removes them and keeps the data orderly. To use the janitor function though, the janitor package would need to be installed.
+
+-   To carry on with the cleaning of the data, sum(is.na) and distinct() are used to help with any missing and any duplicate values and this will then return the data in cleaned and prepared columns, without any missing or duplicate values. Whether sourced through the WDI package or through the read.csv function, the data will be imported and once cleaned, one can move on with the next step to transform it.
+
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+#install.packages("WDI")
+library(WDI)
+#install.packages("ggthemes")
+library(ggthemes)
+```
+
+The data was cleaned and filtered here so that it could only include South Africa (ZA) and Sudan (SD) with the indicators from the source selected for female labour force being (SL.TLF.CACT.FE.ZS) and the male labour participation rate indicators being (SL.TLF.CACT.MA.ZS). The data was also filtered to be from 2000 until 2022 which are from the source. The variable gender_all is where the new filtered data was going to be under, with the indicators under female labour force participation (female_lfp) and male force participation respectively (male_lfp)
+
+```{r}
+gender_all <- WDI(
+  country = c("ZA", "SD"),
+  indicator = c(female_lfp = "SL.TLF.CACT.FE.ZS",
+                male_lfp = "SL.TLF.CACT.MA.ZS"),
+  start = 2000, end = 2022
+)
+```
+
+The data was then arranged to a variable called data_gender when allowed the data to be prepared and transformed to columns which were going to help with visualisation. The select() function was used to select the needed columns from the previous data set (gender_all) in order to make a new one under the variable name data_gender. The columns taken were *country, year, female_lfp and male_lfp*. The !is.na function is to check if data is not missing from the columns. A new column was then created called gender_gap and it shows the difference between male and gender gap in South Africa and Sudan. The head() is used for double checking the data to see if its accurate.
+
+```{r}
+data_gender <- gender_all |>
+  select(country, year, female_lfp, male_lfp) |>
+  filter(!is.na(female_lfp), !is.na(male_lfp)) |>
+  mutate(gender_gap = male_lfp - female_lfp,
+         country = factor(country, levels = c("South Africa", "Sudan")))
+
+head(data_gender) #for double checking
+```
+
+The data is now cleaned to ensure that it is consistent and accurate. Unnecessary columns such as region codes and incomplete records were removed. Missing values were checked and handled by excluding years with incomplete data. New variables were created, such as a gender gap measure, calculated as the difference between male and female participation rates. The data is now ready for visualisation purposes.
+
+### Exploratory Data Analysis
+
+### Visualisations:
+
+**Visualisation 1: Overall Trends (2000–2022)**
+
+A line plot was used to illustrate male and female labour force participation over time for both South Africa and Sudan. This visualisation highlights how both genders have evolved in terms of economic participation and it also shows the gradual improvements or decline. South Africa shows a relatively stable participation rate with minor fluctuations, while Sudan’s data, on the other hand, reveals more variability due to its political and economic instability.
+
+```{r}
+ggplot(data_gender, aes(x = year)) +
+  geom_line(aes(y = female_lfp, color = "Female"), size = 1.1) +
+  geom_line(aes(y = male_lfp, color = "Male"), size = 1.1) +
+  facet_wrap(~country) +
+  scale_color_manual(values = c("Female" = "#E75480", "Male" = "#1E90FF")) +
+  labs(
+    title = "Workforce Participation Trends (2000–2022)",
+    x = "Year",
+    y = "Participation Rate (%)",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+#### **Visualisation 2: Gender Gap Over Time**
+
+A bar plot was created to show the gender gap over the years. This allows one to see whether disparities have narrowed or if they have widened over time. A shrinking bar height over time would indicate progress toward gender equality, while on the other hand, a growing gap would suggest persistent inequality.
+
+```{r}
+ggplot(data_gender, aes(x = year, y = gender_gap, fill = country)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Gender Gap in Workforce Participation (Male - Female)",
+    x = "Year", y = "Gap (percentage points)"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+#### **Visualisation 3: Comparison by Country**
+
+A facet grid line plot was generated to separate trends by country, allowing a more clear comparison between South Africa and Sudan. This visualisation emphasizes that South Africa generally maintains a smaller gender gap and more consistent trends, whereas Sudan exhibits greater volatility and larger gaps.
+
+```{r}
+ggplot(data_gender, aes(x = year)) +
+  geom_line(aes(y = female_lfp, color = "Female"), size = 1.1) +
+  geom_line(aes(y = male_lfp, color = "Male"), size = 1.1) +
+  facet_wrap(~country, ncol = 1) +
+  labs(
+    title = "Male vs Female Workforce Participation per Country",
+    x = "Year", y = "Participation Rate (%)", color = "Gender"
+  ) +
+  scale_color_manual(values = c("Female" = "#E75480", "Male" = "#1E90FF")) +
+  theme_light()
+```
+
+#### **Visualisation 4: Average Gender Disparity**
+
+A bar chart was used to compare the average gender disparity between the two countries across the study period. This provides a compact summary of central tendencies and variability also helping in reinforcing which country exhibits greater inequality.
+
+```{r}
+avg_gap <- data_gender |>
+  group_by(country) |>
+  summarise(avg_gap = mean(gender_gap, na.rm = TRUE))
+```
+
+```{r}
+ggplot(avg_gap, aes(x = country, y = avg_gap, fill = country)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = round(avg_gap, 1)), vjust = -0.5) +
+  labs(
+    title = "Average Gender Disparity in Workforce Participation (2000–2022)",
+    x = "Country", y = "Average Gap (percentage points)"
+  ) +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_minimal()
+```
+
+#### **Visualisation 5: Recent Trends (Post-2019)**
+
+A zoomed-in line graph for the years 2019–2022 focuses on post-pandemic effects. The COVID-19 pandemic disrupted labour markets worldwide and this visualisation helps identify whether recovery has been equal across genders. Early signs suggest that South Africa experienced a quicker rebound among women, while Sudan saw a slower and uneven recovery.
+
+```{r}
+gender_recent <- data_gender |>
+  filter(year >= 2019)
+
+ggplot(gender_recent, aes(x = year)) +
+  geom_line(aes(y = female_lfp, color = "Female"), size = 1.1) +
+  geom_line(aes(y = male_lfp, color = "Male"), size = 1.1) +
+  facet_wrap(~country) +
+  labs(
+    title = "Post-2019 Workforce Participation Trends (2019–2022)",
+    x = "Year", y = "Participation Rate (%)", color = "Gender"
+  ) +
+  scale_color_manual(values = c("Female" = "#E75480", "Male" = "#1E90FF")) +
+  theme_minimal()
+```
+
+**Key insights:**
+
+Exploratory Data Analysis (EDA) was conducted in order visually and statistically examine the patterns and the trends in gender disparities. This step focuses on understanding trends over time and these trends are compared using the differences between the two countries as well as identifying potential outliers or any significant changes. Firstly, South Africa consistently shows higher female participation rates compared to Sudan, which reflects a stronger institutional support for gender inclusion and a higher educational attainment among women. Looking at Sudan’s patterns on the other hand, it displays significant gender gaps, which suggest that socio-cultural barriers and economic constraints are what continue to hinder women’s full participation in the workplace.
+
+The gender gap variable reveals that the disparity in Sudan has fluctuated considerably over time, often widening during periods of political unrest or economic contraction. In contrast though, South Africa’s gap has remained relatively narrow and stable, with gradual improvements that aligns with policy interventions that are aimed at gender quality and labour reforms. Overall, it is highlighted that while both countries face gender disparities, the magnitude and the direction of change has a significant difference between them and it reflects how education, governance and social norms interact in order to shape economic inclusion.
+
+### **Reporting and conclusion**
+
+This analysis demonstrates how gender disparities in labour force participation is different across African regions. South Africa’s smaller gap and steady improvement suggest that progressive policies, education access as well as urbanisation play crucial roles in order to enhance women’s participation in the workforce. Sudan’s persistent gap, on the other hand, reflects broader systemic challenges that are tied to conflict, traditional gender norms and an unfortunate limited access to education as well as employment opportunities for women. On a broader perspective, the analysis shows the importance of context sensitive approaches to promoting gender equality in labour markers. Here are the results of the visualisations:
+
+![](images/clipboard-939468236.png)
+
+![](images/clipboard-3189911924.png)
+
+![](images/clipboard-2285829479.png)
+
+![](images/clipboard-1708332926.png)
+
+While the data from 2000 to 2022 show overall progress, disparities still remain quite significant and they require a sustained policy attention. The data set is limited though as it ends in 2022 so that wasn't captured as much but overall, there is quite a difference between the two countries in terms of the equality space, with Sudan showing significant gaps between male and female labour participation.
+
+These patterns also help highlight the complex interplay that is between between policy, culture, and economic opportunity in shaping gender equity outcomes. In addressing the persistent disparities, this requires sustained investment in education, equitable labour policies, as well as the dismantling of gendered barriers in economic participation. In conclusion, the findings demonstrate that closing gender gaps in labour participation is not only socially important but it is a key driver in showing inclusitivity and sustainable development.
