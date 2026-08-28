@@ -2,7 +2,7 @@
 Here is a collection of my academic data analysis projects that were completed using R and Quarto, which cover exploratory data analysis, data visualisation as well as the interpretation of real world datasets. 
 
 Projects:
-1. Uber Data Analytics/Analysis: An exploratory data analysis of an Uber dataset used from (insert source), using R to investigate patterns as well as trends within the daata through data cleaning, visualisation and analysis.
+1. Uber Data Analytics/Analysis: An exploratory data analysis of an Uber dataset used from Kaggle, using R to investigate patterns as well as trends within the daata through data cleaning, visualisation and analysis.
 
 Files:
 - Uber-Data-Analytics.qmd (Quarto source file)
